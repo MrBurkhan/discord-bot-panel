@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bot {
+  id            String    @id @default(cuid())
+  name          String
+  token         String
+  applicationId String?
+  guildId       String?
+  autoStart     Boolean   @default(false)
+  logChannelId  String?
+  dmFallback    Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  commands      Command[]
+  entries       StorageEntry[]
+  logs          LogEntry[]
+}
+
+model Command {
+  id          String   @id @default(cuid())
+  botId       String
+  bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  name        String
+  description String   @default("Comando creado desde el panel")
+  type        String
+  enabled     Boolean  @default(true)
+  ephemeral   Boolean  @default(false)
+  options     String   @default("[]")
+  config      String   @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([botId, name])
+}
+
+model StorageEntry {
+  id        String   @id @default(cuid())
+  botId     String
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  scope     String
+  scopeId   String
+  key       String
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@unique([botId, scope, scopeId, key])
+}
+
+model LogEntry {
+  id          String   @id @default(cuid())
+  botId       String
+  bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
+  level       String   @default("info")
+  commandName String?
+  userTag     String?
+  guildId     String?
+  message     String
+  createdAt   DateTime @default(now())
+
+  @@index([botId, createdAt])
+}

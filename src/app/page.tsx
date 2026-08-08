@@ -1,103 +1,164 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { Alert, Badge, Button, Card, Field, Input, Toggle } from "@/components/ui";
+import { api } from "@/lib/client";
+import type { SerializedBot } from "@/server/bots";
+
+export default function DashboardPage() {
+  const [bots, setBots] = useState<SerializedBot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: "", token: "", guildId: "", autoStart: false });
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setBots(await api<SerializedBot[]>("/api/bots"));
+      setError("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const timer = setInterval(load, 10000);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  async function createBot() {
+    setBusy("create");
+    try {
+      await api("/api/bots", { method: "POST", body: JSON.stringify(form) });
+      setForm({ name: "", token: "", guildId: "", autoStart: false });
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function power(botId: string, action: "start" | "stop") {
+    setBusy(botId);
+    try {
+      await api(`/api/bots/${botId}/power`, { method: "POST", body: JSON.stringify({ action }) });
+      setError("");
+      await load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="space-y-6">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Tus bots</h1>
+          <p className="text-sm text-slate-400">
+            Conecta varios bots y dale a cada uno sus propios comandos personalizados.
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancelar" : "+ Conectar bot"}</Button>
+      </div>
+
+      {error ? <Alert message={error} /> : null}
+
+      {showForm ? (
+        <Card className="space-y-4">
+          <h2 className="text-lg font-medium">Conectar un bot nuevo</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Nombre">
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Mi bot de comunidad"
+              />
+            </Field>
+            <Field label="Token del bot" hint="Se guarda cifrado (AES-256-GCM) con tu APP_SECRET.">
+              <Input
+                type="password"
+                value={form.token}
+                onChange={(e) => setForm({ ...form, token: e.target.value })}
+                placeholder="MTA5..."
+              />
+            </Field>
+            <Field
+              label="ID del servidor (opcional)"
+              hint="Si lo indicas, los comandos se registran al instante solo en ese servidor."
+            >
+              <Input
+                value={form.guildId}
+                onChange={(e) => setForm({ ...form, guildId: e.target.value })}
+                placeholder="123456789012345678"
+              />
+            </Field>
+            <div className="flex items-end">
+              <Toggle
+                checked={form.autoStart}
+                onChange={(autoStart) => setForm({ ...form, autoStart })}
+                label="Marcar como bot principal"
+              />
+            </div>
+          </div>
+          <Button onClick={createBot} disabled={busy === "create" || !form.name || !form.token}>
+            {busy === "create" ? "Guardando..." : "Guardar bot"}
+          </Button>
+        </Card>
+      ) : null}
+
+      {loading ? (
+        <p className="text-sm text-slate-400">Cargando...</p>
+      ) : bots.length === 0 ? (
+        <Card>
+          <p className="text-sm text-slate-300">
+            Todavía no hay bots. Crea una aplicación en el portal de Discord, copia el token del bot y pulsa
+            <strong> Conectar bot</strong>.
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {bots.map((bot) => (
+            <Card key={bot.id} className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Link href={`/bots/${bot.id}`} className="text-lg font-medium hover:text-indigo-300">
+                    {bot.name}
+                  </Link>
+                  <p className="font-mono text-xs text-slate-500">{bot.tokenPreview}</p>
+                </div>
+                <Badge tone={bot.status.running ? "green" : "slate"}>
+                  {bot.status.running ? `En línea${bot.status.username ? ` · ${bot.status.username}` : ""}` : "Apagado"}
+                </Badge>
+              </div>
+              <p className="text-sm text-slate-400">{bot.commandCount ?? 0} comandos configurados</p>
+              <div className="flex flex-wrap gap-2">
+                {bot.status.running ? (
+                  <Button variant="danger" onClick={() => power(bot.id, "stop")} disabled={busy === bot.id}>
+                    Apagar
+                  </Button>
+                ) : (
+                  <Button variant="success" onClick={() => power(bot.id, "start")} disabled={busy === bot.id}>
+                    Encender
+                  </Button>
+                )}
+                <Link href={`/bots/${bot.id}`}>
+                  <Button variant="ghost">Administrar comandos</Button>
+                </Link>
+              </div>
+              {bot.status.error ? <Alert message={bot.status.error} /> : null}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Panel de bots de Discord
 
-## Getting Started
+Panel web para conectar varios bots de Discord y crear sus comandos desde un menú visual, sin escribir código.
 
-First, run the development server:
+## Qué puedes crear
+
+| Tipo | Para qué sirve |
+| --- | --- |
+| 💬 Respuesta de texto | Mensaje simple con variables (`{user}`, `{server}`, `{opt:nombre}`) |
+| 🖼️ Embed | Tarjeta con título, color, imagen, miniatura, pie y campos |
+| 🎲 Respuesta al azar | Elige al azar entre una lista de respuestas |
+| 🔘 Botones interactivos | Hasta 5 botones que responden, envían DM o abren un enlace |
+| 🗄️ Almacenamiento | Guardar, leer, sumar, listar o borrar datos por usuario, servidor o globales |
+| 📝 Registro | Registra usuarios con los campos que definas |
+| 📩 Respuesta al DM | Envía la respuesta por mensaje directo con confirmación en el canal |
+| ⚙️ Configuración | Ajustes editables desde Discord, opcionalmente solo para administradores |
+
+Además: varios bots a la vez con comandos propios, encendido/apagado desde el panel, sincronización de comandos con Discord, visor de datos guardados y registro de actividad.
+
+## Puesta en marcha
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env      # define DATABASE_URL y APP_SECRET
+npx prisma migrate deploy
+npm run dev               # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`APP_SECRET` cifra los tokens de los bots con AES-256-GCM antes de guardarlos en la base de datos. Si lo cambias, tendrás que volver a introducir los tokens.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Cómo conectar un bot
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crea una aplicación en el [portal de desarrolladores de Discord](https://discord.com/developers/applications) y añade un bot.
+2. Copia el token del bot e invítalo a tu servidor con los scopes `bot` y `applications.commands`.
+3. En el panel pulsa **Conectar bot**, pega el token y (opcional) el ID del servidor.
+4. Pulsa **Encender**: los comandos se sincronizan automáticamente. Si añades comandos después, usa **Sincronizar comandos**.
 
-## Learn More
+Con un ID de servidor los comandos aparecen al instante; sin él se registran de forma global y Discord puede tardar hasta una hora en propagarlos.
 
-To learn more about Next.js, take a look at the following resources:
+## Notas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Los bots se ejecutan dentro del proceso de Next.js, así que el panel debe seguir abierto/desplegado para que estén en línea.
+- El panel no tiene autenticación: pensado para uso local o detrás de un proxy protegido.
